@@ -1,0 +1,78 @@
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
+import time
+# 改动？
+def CreatImage():
+    img = cv2.imread("E:\opencv programs\\test\\1.jpg",cv2.IMREAD_ANYCOLOR)
+    cv2.namedWindow("OriginImage")
+    cv2.imshow("OriginImage",img)
+    cv2.waitKey(0)
+    return img
+
+# #方法一
+def RotateMatSwc(Theta, Step, Width, Weight): # 计算旋转矩阵,test完成，返回旋转后的图像及旋转矩阵
+    RMat = np.zeros((2, 3), np.float64)
+    TMat = np.zeros((2, 1), np.float64)
+    Theta = 0.25 * np.pi
+    Step = 0.01
+    x0 = 256
+    y0 = 256
+    RMat[0, 0] = np.cos(Theta)
+    RMat[0, 1] = -np.sin(Theta)
+    RMat[0, 2] = 0.5*x0*(1 - np.cos(Theta)) + 0.5 * y0 * np.sin(Theta)
+    RMat[1, 0] = np.sin(Theta)
+    RMat[1, 1] = np.cos(Theta)
+    RMat[1, 2] = -0.5*x0*np.sin(Theta) - 0.5 * y0 * np.cos(Theta) + 0.5 * x0
+    a = np.cos(Theta)
+    print('theory 1:', RMat)
+    return RMat
+    # # 计算完成
+
+#方法二,利用opencv内置函数,theta用角度,返回旋转后的图片
+def imageRotate(InputImage, Theta, Scale, Flag = 0, CenterPoint = None):    #Scale未调试
+    if Flag == 0:
+        (width, height) = InputImage.shape[:2]
+        RimageSize = (width, height, 3)
+        CenterPoint = (RimageSize[0] / 2, RimageSize[1] / 2)
+        TempImage = InputImage
+    elif Flag == 1:
+        (width, height) = InputImage.shape[:2]
+        a = np.sin(Theta)
+        b = np.cos(Theta)
+        width_rotate = int(height * np.fabs(a) + width * np.fabs(b))
+        height_rotate = int(width * np.fabs(a) + height * np.fabs(b))
+        RimageSize = (width_rotate, height_rotate, 3)
+        CenterPoint = (int(RimageSize[0] / 2), int(RimageSize[1] / 2))
+        TempImage = np.zeros(RimageSize, dtype = np.uint8)
+        TempImage[int(0.5*RimageSize[0] - 0.5*width) : int(0.5*RimageSize[0] + 0.5*width), int(0.5*RimageSize[1] - 0.5*height) : int(0.5*RimageSize[1] + 0.5*height)] = InputImage
+    else: print("imageRotate Flag error, please check Flag value.\n")
+    RMat = cv2.getRotationMatrix2D(CenterPoint, Theta, Scale)
+    # print('theory 2:', RMat)
+    RotatedImg = cv2.warpAffine(TempImage, RMat, RimageSize[:2])
+    # cv2.waitKey(0)
+    return RotatedImg, RMat
+#方法二完成
+
+def CreateTempleClass(InputImage , Theta, ThetaStep, LowerScale, HigherScale, ScaleStep, Flag, CenterPoint = None):
+    ThetaVec = np.arange(0 , Theta, ThetaStep, dtype = np.float64)
+    ScaleVec = np.arange(LowerScale, HigherScale, ScaleStep, dtype = np.float64)
+    print('角度序列', ThetaVec)
+    print('尺度序列', ScaleVec)
+    ThetaVecLen = len(ThetaVec)
+    ScaleVecLen = len(ScaleVec)
+    print('角度长度', ThetaVecLen)
+    print('尺度长度', ScaleVecLen)
+    cv2.namedWindow("模板")
+    for i in list(range(ThetaVecLen)):
+        for j in list(range(ScaleVecLen)):
+            RotatedImage, Rmat = imageRotate(InputImage, ThetaVec[i], ScaleVec[j], Flag, CenterPoint = None)
+            cv2.imshow("模板", RotatedImage)
+            # time.sleep(5) #does not work
+            cv2.waitKey(500)
+            # cv2.destroyAllWindows()
+    return 0
+
+def StringMerge(Val, StringHead = None, StringBottom = None):
+    stringM = "%s%d%s"%(StringHead, Val, StringBottom)
+    return stringM
